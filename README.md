@@ -1,2 +1,2 @@
 # cw2vec-pytorch
-word2vec implementation in pytorch 
+cw2vec implementation in pytorch 
