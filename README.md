@@ -2,7 +2,7 @@
 
 本repo包含是 使用Pytorch和gensim实现cw2vec模型，主要参考根据该论文“[cw2vec: Learning Chinese Word Embeddings with Stroke n-gram Information](http://www.statnlp.org/wp-content/uploads/papers/2018/cw2vec/cw2vec.pdf) ”提出的cw2vec进行实现。
 
-** note**:整体上看完该论文，基本上与Fasttext很相似，因此，我们只要根据Fasttetx进行实现。
+**note**: 整体上看完该论文，基本上与Fasttext很相似，因此，我们只要根据Fasttetx进行实现。
 - version1: 基于gensim模块中的fasttext进行实现，训练速度很快
 - version2: 完全基于Pytorch框架进行实现cw2vec，虽然速度很慢，但可以理解其中的细节。
 
