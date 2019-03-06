@@ -11,6 +11,7 @@
 ### structure of the model
 
 整个模型结构如下图所示:
+
 ![model](img/model.jpg)
 
 整个数据构造方式如下图所示：
