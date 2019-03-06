@@ -1,39 +1,38 @@
 #encoding:utf-8
-import numpy as np
 import json
-from os import path
+import numpy as np
+from pathlib import Path
 import matplotlib.pyplot as plt
-from ..utils.utils import ensure_dir
 plt.switch_backend('agg') # 防止ssh上绘图问题
 
 class TrainingMonitor():
-    def __init__(self, fig_dir, arch,json_dir=None, start_at=0):
+    def __init__(self, file_dir,arch,start_at=0):
         '''
-        :param figPath: 保存图像路径
-        :param jsonPath: 保存json文件路径
         :param startAt: 重新开始训练的epoch点
         '''
+        if isinstance(file_dir,Path):
+            pass
+        else:
+            file_dir = Path(file_dir)
+        file_dir.mkdir(parents=True, exist_ok=True)
+
+        self.arch = arch
+        self.file_dir = file_dir
         self.start_at = start_at
         self.H = {}
-        self.loss_path = path.sep.join([fig_dir,arch+'_loss.png'])
-        self.acc_path = path.sep.join([fig_dir,arch+"_accuracy.png"])
-        self.f1_path  = path.sep.join([fig_dir,arch+"_f1.png"])
-        self.json_path = path.sep.join([json_dir,arch+"_training_monitor.json"])
-        self.use = 'on_epoch_end'
+        self.json_path = file_dir / (arch+"_training_monitor.json")
+        self.reset()
 
-        ensure_dir(fig_dir)
-        ensure_dir(json_dir)
-
-    def _restart(self):
+    def reset(self):
         if self.start_at > 0:
             # 如果jsonPath文件存在，咋加载历史训练数据
             if self.json_path is not None:
-                if path.exists(self.json_path):
-                    self.H = json.loads(open(self.json_path).read())
+                if self.json_path.exists():
+                    self.H = json.loads(open(str(self.json_path)).read())
                     for k in self.H.keys():
                         self.H[k] = self.H[k][:self.start_at]
 
-    def step(self,logs={}):
+    def epoch_step(self,logs={}):
         for (k, v) in logs.items():
             l = self.H.get(k, [])
             # np.float32会报错
@@ -44,25 +43,28 @@ class TrainingMonitor():
 
         # 写入文件
         if self.json_path is not None:
-            f = open(self.json_path, "w")
+            f = open(str(self.json_path), "w")
             f.write(json.dumps(self.H))
             f.close()
 
         #保存train图像
+        if len(self.H["loss"]) == 1:
+            self.paths = {key: self.file_dir / (self.arch + f'_{key}') for key in self.H.keys()}
         if len(self.H["loss"]) > 1:
-            # plot the training loss and accuracy
-            N = np.arange(0, len(self.H["loss"]))
-            plt.style.use("ggplot")
-            plt.figure()
-            plt.plot(N, self.H["loss"],label="train_loss")
-            plt.plot(N, self.H["val_loss"],label="val_loss")
-            plt.legend()
-            plt.xlabel("Epoch #")
-            plt.ylabel("Loss")
-            plt.title("Training Loss [Epoch {}]".format(len(self.H["loss"])))
-            plt.savefig(self.loss_path)
-            plt.close()
-
-
+            # 指标变化曲线
+            # 需要成对出现
+            keys = [key for key,_ in self.H.items() if '_' not in key]
+            for key in keys:
+                N = np.arange(0, len(self.H[key]))
+                plt.style.use("ggplot")
+                plt.figure()
+                plt.plot(N, self.H[key],label=f"train_{key}")
+                plt.plot(N, self.H[f"valid_{key}"],label=f"valid_{key}")
+                plt.legend()
+                plt.xlabel("Epoch #")
+                plt.ylabel(key)
+                plt.title(f"Training {key} [Epoch {len(self.H[key])}]")
+                plt.savefig(str(self.paths[key]))
+                plt.close()
 
 

@@ -36,23 +36,30 @@ class Trainer(object):
         self.vector_save_path = vector_save_path
         self.all_vector_save_path = all_vector_save_path
         self.model_save_path  = model_save_path
-        self._reset()
+        self.reset()
 
-    def _reset(self):
-        self.progressbar       = ProgressBar(loss_name='loss',n_batch=len(self.vocab)* 50 )
+    def reset(self):
+        self.progressbar       = ProgressBar(n_batch=len(self.vocab)* 50 )
         self.model,self.device = model_device(n_gpu=self.n_gpu,model = self.model,logger = self.logger)
         self.start_epoch = 1
 
     def summary(self):
+        '''
+        模型整体信息
+        :return:
+        '''
         model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
         # 总的模型参数量
-        self.logger.info('trainable parameters: {:4}M'.format(params / 1000 / 1000))
+        self.logger.info(f'trainable parameters: {params}')
         # 模型结构
         self.logger.info(self.model)
 
-    # 保存模型信息
     def _save_info(self):
+        '''
+        保存模型信息
+        :return:
+        '''
         state = {
             'epoch': self.epochs,
             'state_dict': self.model.state_dict(),
@@ -60,15 +67,18 @@ class Trainer(object):
         }
         return state
 
-    # 保存模型以及词向量
     def save(self):
+        '''
+        保存模型以及词向量
+        :return:
+        '''
         id_word = {value:key for key ,value in self.vocab.items()}
         id_all_word = {value:key for key ,value in self.all_vocab.items()}
         state = self._save_info()
         torch.save(state, self.model_save_path)
         self.logger.info('saving word2vec vector')
         v_metrix = self.model.v_embedding_matrix.weight.data
-        with open(self.vector_save_path, "w", encoding="utf-8") as f:
+        with open(str(self.vector_save_path), "w", encoding="utf-8") as f:
             if self.device=='cpu':
                 vector = v_metrix.numpy()
             else:
@@ -81,7 +91,7 @@ class Trainer(object):
                 f.write(write_line)
 
         u_metrix = self.model.u_embedding_matrix.weight.data
-        with open(self.all_vector_save_path, "w", encoding="utf-8") as f:
+        with open(str(self.all_vector_save_path), "w", encoding="utf-8") as f:
             if self.device=='cpu':
                 vector = u_metrix.numpy()
             else:
@@ -93,8 +103,11 @@ class Trainer(object):
                 write_line = word + " " + " ".join(s_vec)+"\n"
                 f.write(write_line)
 
-    # epoch训练
     def _train_epoch(self):
+        '''
+        epoch训练
+        :return:
+        '''
         self.model.train()
         i = 0
         if self.device == 'cpu':
@@ -114,16 +127,21 @@ class Trainer(object):
             self.optimizer.step()
             i += 1
             if self.verbose >= 1:
-                self.progressbar.step(batch_idx=i,loss =loss.item(),
+                self.progressbar.batch_step(batch_idx=i,info = {"loss":loss.item()},
                                       use_time=time.time() - start)
-    #训练
+
     def train(self):
+        '''
+        训练主函数
+        :return:
+        '''
+        print("----------------- training start -----------------------")
         for epoch in range(self.start_epoch,self.start_epoch+self.epochs):
-            print("----------------- training start -----------------------")
-            print("Epoch {i}/{epochs}......".format(i=epoch, epochs=self.start_epoch+self.epochs -1))
-            self._train_epoch()
             if self.lr_scheduler:
-                self.lr_scheduler.step(epoch)
+                self.lr_scheduler.epoch_step(epoch)
+            print(f"Epoch {epoch}/{self.start_epoch+self.epochs -1}......")
+            self._train_epoch()
+
             self.save()
 
 

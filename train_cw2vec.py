@@ -9,7 +9,7 @@ from pycw2vec.model.nn.skipgram import SkipGram
 from pycw2vec.utils.logginger import init_logger
 from pycw2vec.utils.utils import seed_everything
 from pycw2vec.config.cw2vec_config import configs as config
-from pyword2vec.callback.lrscheduler import StepLr
+from pycw2vec.callback.lrscheduler import StepLr
 from pycw2vec.callback.trainingmonitor import TrainingMonitor
 warnings.filterwarnings("ignore")
 
@@ -23,21 +23,22 @@ def main():
     #**************************** 加载数据集 ****************************
     logger.info('starting load train data from disk')
     train_dataset   = DataLoader(skip_header  = False,
-                                    shuffle      = True,
-                                    strokes_path = config['stroke_path'],
-                                    negative_num = config['negative_sample_num'],
-                                    batch_size   = config['batch_size'],
-                                    window_size  = config['window_size'],
-                                    data_path    = config['data_path'],
-                                    vocab_path   = config['vocab_path'],
-                                    vocab_size   = config['vocab_size'],
-                                    min_freq     = config['min_freq'],
-                                    max_seq_len  = config['max_seq_len'],
-                                    seed         = args['seed'],
-                                    sample       = config['sample'],
-                                    ngram_vocab_path = config['ngram_vocab_path'],
-                                    char_to_stroke_path = config['char_to_stroke_path']
-                                    )
+                                shuffle      = True,
+                                strokes_path = config['stroke_path'],
+                                negative_num = config['negative_sample_num'],
+                                batch_size   = config['batch_size'],
+                                window_size  = config['window_size'],
+                                data_path    = config['data_path'],
+                                vocab_path   = config['vocab_path'],
+                                vocab_size   = config['vocab_size'],
+                                min_freq     = config['min_freq'],
+                                max_seq_len  = config['max_seq_len'],
+                                seed         = args['seed'],
+                                sample       = config['sample'],
+                                stroke2idx   = config['stroke2idx'],
+                                ngram_vocab_path = config['ngram_vocab_path'],
+                                char_to_stroke_path = config['char_to_stroke_path']
+                                )
     # **************************** 模型和优化器 ***********************
     logger.info("initializing model")
     model = SkipGram(embedding_dim = config['embedding_dim'],vocab_size = len(train_dataset.all_vocab))
@@ -47,9 +48,7 @@ def main():
     logger.info("initializing callbacks")
 
     # 监控训练过程
-    train_monitor = TrainingMonitor(fig_dir  = config['figure_dir'],
-                                    json_dir = config['log_dir'],
-                                    arch     = arch)
+    train_monitor = TrainingMonitor(file_dir= config['figure_dir'],arch = arch)
     # 学习率机制
     lr_scheduler = StepLr(optimizer=optimizer,
                           init_lr=config['learning_rate'],
