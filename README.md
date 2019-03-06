@@ -11,11 +11,11 @@
 ### structure of the model
 
 整个模型结构如下图所示:
-![model](img\model.jpg)
+![model](img/model.jpg)
 
 整个数据构造方式如下图所示：
 
-![2019-03-05_150834](img\2019-03-05_150834.jpg)
+![2019-03-05_150834](img/2019-03-05_150834.jpg)
 
 ### Structure of the code
 
